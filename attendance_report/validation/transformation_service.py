@@ -1,3 +1,5 @@
+from dataclasses import dataclass, field
+
 from ..models import AttendanceReport
 from .observer import (
     LoggingObserver,
@@ -7,6 +9,14 @@ from .observer import (
 )
 from .rules_provider import DEFAULT_RULES_PROVIDER, RulesProvider
 from .validating_decorator import TransformationError
+
+
+@dataclass
+class ProcessingResult:
+    """Result of a transformation run, including any per-row errors."""
+    report: AttendanceReport
+    errors: list[str] = field(default_factory=list)
+    fallback_count: int = 0
 
 
 class TransformationService:
@@ -39,15 +49,15 @@ class TransformationService:
         for observer in self.observers:
             observer.on_report_complete(event)
 
-    def transform_report(self, report: AttendanceReport) -> AttendanceReport:
+    def transform_report(self, report: AttendanceReport) -> ProcessingResult:
         """Apply transformation strategy to all rows in report."""
         if report.report_type not in self.registry:
             # No transformation strategy; return as-is
-            return report
+            return ProcessingResult(report=report)
 
         if self.rules_provider.get(report.report_type) is None:
             # Unknown rule set for this report type; return as-is for safety.
-            return report
+            return ProcessingResult(report=report)
         
         strategy = self.registry[report.report_type]
         transformed_rows = []
@@ -85,7 +95,7 @@ class TransformationService:
             )
         )
 
-        return AttendanceReport(
+        transformed_report = AttendanceReport(
             report_type=report.report_type,
             source_path=report.source_path,
             company_name=report.company_name,
@@ -93,4 +103,14 @@ class TransformationService:
             month_label=report.month_label,
             rows=tuple(transformed_rows),
             summary=report.summary
+        )
+        errors = [
+            f"Row {i} fallback: original row preserved due to transformation error"
+            for i, row in enumerate(report.rows)
+            if row not in transformed_rows[:i + 1]
+        ]
+        return ProcessingResult(
+            report=transformed_report,
+            errors=errors,
+            fallback_count=fallback_count,
         )

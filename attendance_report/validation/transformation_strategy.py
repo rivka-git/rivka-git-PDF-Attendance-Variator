@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import hashlib
+import random
 from datetime import time
 from decimal import Decimal
 
@@ -28,10 +28,9 @@ def _minutes_to_time(minutes: int) -> time:
 
 
 def _deterministic_offset(row: AttendanceRow, span: int = 10) -> int:
-    token = f"{row.work_date}-{row.day_name}-{row.entry_time}-{row.total_hours}"
-    digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
-    seed_value = int(digest[:8], 16)
-    return (seed_value % (2 * span + 1)) - span
+    date_seed = int(row.work_date.strftime("%Y%m%d")) if row.work_date else 0
+    rng = random.Random(date_seed)
+    return rng.randint(-span, span)
 
 
 class TypeATransformationStrategy(BaseTransformationStrategy):

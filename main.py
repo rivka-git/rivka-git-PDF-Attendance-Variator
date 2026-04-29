@@ -114,7 +114,10 @@ def main(argv: list[str] | None = None) -> int:
             rules_provider=DEFAULT_RULES_PROVIDER,
             observers=[LoggingObserver()],
         )
-        transformed_report = transformation_service.transform_report(report)
+        transformed_result = transformation_service.transform_report(report)
+        transformed_report = transformed_result.report
+        if transformed_result.fallback_count:
+            logger.warning("  -> %d rows used fallback (transformation errors)", transformed_result.fallback_count)
         logger.info("  -> Transformation complete")
 
         # Stage 5: Generate output PDF

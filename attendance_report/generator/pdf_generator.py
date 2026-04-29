@@ -18,6 +18,12 @@ class PdfGenerator:
         "TYPE_C": "_table_for_type_b",
     }
 
+    _COL_WIDTHS = {
+        "TYPE_A": [80, 80, 70, 70, 70],
+        "TYPE_B": [80, 70, 60, 60, 60, 100],
+        "TYPE_C": [80, 70, 60, 60, 60, 100],
+    }
+
     logger = logging.getLogger(__name__)
 
     def _fmt_date(self, value: Any) -> str:
@@ -91,11 +97,7 @@ class PdfGenerator:
 
         story.append(Spacer(1, 12))
 
-        if report.report_type == "TYPE_A":
-            col_widths = [80, 80, 70, 70, 70]
-        else:
-            col_widths = [80, 70, 60, 60, 60, 100]
-
+        col_widths = self._COL_WIDTHS.get(report.report_type, [80, 70, 60, 60, 60, 100])
         builder_name = self._TABLE_BUILDERS.get(report.report_type, "_table_for_type_b")
         builder = getattr(self, builder_name)
         table_data = builder(report)

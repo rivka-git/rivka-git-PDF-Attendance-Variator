@@ -5,6 +5,7 @@ from decimal import Decimal
 from attendance_report.models import AttendanceReport, AttendanceRow
 from attendance_report.validation import (
     AuditObserver,
+    ProcessingResult,
     ReportRules,
     RulesProvider,
     TransformationService,
@@ -65,9 +66,9 @@ def test_service_uses_fallback_and_observer_counts_it():
         observers=[audit],
     )
 
-    transformed = service.transform_report(_report())
+    result = service.transform_report(_report())
 
-    assert len(transformed.rows) == 3
+    assert len(result.report.rows) == 3
     assert audit.summary()["fallback_count"] == 3
 
 
@@ -81,5 +82,21 @@ def test_rules_provider_is_injectable_for_known_types():
         observers=[],
     )
 
-    transformed = service.transform_report(_report())
-    assert len(transformed.rows) == 3
+    result = service.transform_report(_report())
+    assert len(result.report.rows) == 3
+
+
+def test_processing_result_contains_report_and_fallback_count():
+    """ProcessingResult wraps the transformed report and exposes errors list + fallback count."""
+    service = TransformationService(
+        strategy_registry={"TYPE_A": ValidatingStrategyDecorator(_BrokenStrategy())},
+        rules_provider=RulesProvider(),
+        observers=[],
+    )
+
+    result = service.transform_report(_report())
+
+    assert isinstance(result, ProcessingResult)
+    assert isinstance(result.errors, list)
+    assert result.fallback_count == 3
+    assert len(result.report.rows) == 3

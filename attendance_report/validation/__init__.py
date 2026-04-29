@@ -1,4 +1,4 @@
-from .transformation_service import TransformationService
+from .transformation_service import ProcessingResult, TransformationService
 from .transformation_strategy import (
     BaseTransformationStrategy,
     TypeATransformationStrategy,
@@ -17,6 +17,7 @@ from .validating_decorator import TransformationError, ValidatingStrategyDecorat
 from .validation_rules import ValidationRules
 
 __all__ = [
+    "ProcessingResult",
     "TransformationService",
     "BaseTransformationStrategy",
     "TypeATransformationStrategy",
