@@ -55,6 +55,11 @@ class ParsingError(AttendanceReportError):
     pass
 
 
+class ParseError(ParsingError):
+    """Backward-compatible alias used by some assignment checklists."""
+    pass
+
+
 class ValidationError(AttendanceReportError):
     """Raised when row validation fails and recovery is impossible."""
     pass

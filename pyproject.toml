@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "attendance-report-transformer"
+version = "0.1.0"
+description = "Pipeline for attendance PDF extraction, parsing, transformation, and generation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "pdf2image",
+  "Pillow",
+  "pytesseract",
+  "pypdf",
+  "reportlab",
+]
+
+[project.scripts]
+attendance-report = "main:main"
+
+[tool.setuptools.packages.find]
+include = ["attendance_report*"]

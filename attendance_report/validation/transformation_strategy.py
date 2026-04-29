@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+import hashlib
 from datetime import time
 from decimal import Decimal
 
+from ..config import TRANSFORMATION_SPAN_MINUTES
 from ..models import AttendanceRow
 
 
@@ -27,7 +29,9 @@ def _minutes_to_time(minutes: int) -> time:
 
 def _deterministic_offset(row: AttendanceRow, span: int = 10) -> int:
     token = f"{row.work_date}-{row.day_name}-{row.entry_time}-{row.total_hours}"
-    return (sum(ord(ch) for ch in token) % (2 * span + 1)) - span
+    digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    seed_value = int(digest[:8], 16)
+    return (seed_value % (2 * span + 1)) - span
 
 
 class TypeATransformationStrategy(BaseTransformationStrategy):
@@ -39,7 +43,7 @@ class TypeATransformationStrategy(BaseTransformationStrategy):
             return row
 
         # Shift both entry/exit by deterministic offset so total duration remains stable.
-        offset = _deterministic_offset(row, span=8)
+        offset = _deterministic_offset(row, span=TRANSFORMATION_SPAN_MINUTES["TYPE_A"])
         new_entry = _minutes_to_time(_time_to_minutes(row.entry_time) + offset)
         new_exit = _minutes_to_time(_time_to_minutes(row.exit_time) + offset)
 
@@ -76,7 +80,7 @@ class TypeBTransformationStrategy(BaseTransformationStrategy):
         if row.entry_time is None or row.exit_time is None:
             return row
 
-        offset = _deterministic_offset(row, span=6)
+        offset = _deterministic_offset(row, span=TRANSFORMATION_SPAN_MINUTES["TYPE_B"])
         new_entry = _minutes_to_time(_time_to_minutes(row.entry_time) + offset)
         new_exit = _minutes_to_time(_time_to_minutes(row.exit_time) + offset)
 

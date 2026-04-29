@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import time
+from decimal import Decimal
 
 from attendance_report.models import AttendanceReport, AttendanceRow
 from attendance_report.validation import (
@@ -19,8 +20,14 @@ class _IdentityStrategy(BaseTransformationStrategy):
 
 class _BrokenStrategy(BaseTransformationStrategy):
     def transform_row(self, row: AttendanceRow) -> AttendanceRow:
-        # Always invalid so decorator raises and service falls back.
-        return AttendanceRow(work_date=row.work_date, entry_time=row.exit_time, exit_time=row.entry_time)
+        # Always invalid for ValidationRules: total_hours mismatches shift length.
+        return AttendanceRow(
+            work_date=row.work_date,
+            day_name=row.day_name,
+            entry_time=row.entry_time,
+            exit_time=row.exit_time,
+            total_hours=Decimal("0.10"),
+        )
 
 
 def _report() -> AttendanceReport:

@@ -1,6 +1,7 @@
 """PDF text extraction with OCR fallback."""
 
 import logging
+import os
 import shutil
 from pathlib import Path
 
@@ -19,8 +20,19 @@ WIN_POPPLER = r"C:\poppler\Library\bin"
 
 def _configure_binaries() -> tuple[str, str | None]:
     """Auto-detect system binary paths."""
-    tesseract = WIN_TESSERACT if Path(WIN_TESSERACT).exists() else (shutil.which("tesseract") or "tesseract")
-    poppler = WIN_POPPLER if Path(WIN_POPPLER).exists() else None
+    env_tesseract = os.environ.get("TESSERACT_CMD")
+    env_poppler = os.environ.get("POPPLER_PATH")
+
+    if env_tesseract:
+        tesseract = env_tesseract
+    else:
+        tesseract = WIN_TESSERACT if Path(WIN_TESSERACT).exists() else (shutil.which("tesseract") or "tesseract")
+
+    if env_poppler:
+        poppler = env_poppler
+    else:
+        poppler = WIN_POPPLER if Path(WIN_POPPLER).exists() else None
+
     return tesseract, poppler
 
 

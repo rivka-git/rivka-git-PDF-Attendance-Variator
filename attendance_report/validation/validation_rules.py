@@ -1,6 +1,12 @@
-from datetime import time
 from decimal import Decimal
 
+from ..config import (
+    MAX_BREAK_MINUTES as CFG_MAX_BREAK_MINUTES,
+    MAX_TOTAL_MISMATCH_HOURS as CFG_MAX_TOTAL_MISMATCH_HOURS,
+    MAX_WORKING_HOURS as CFG_MAX_WORKING_HOURS,
+    MIN_BREAK_MINUTES as CFG_MIN_BREAK_MINUTES,
+    MIN_WORKING_HOURS as CFG_MIN_WORKING_HOURS,
+)
 from ..models import AttendanceRow
 
 
@@ -8,13 +14,13 @@ class ValidationRules:
     """Business rules for validating attendance rows."""
     
     # Time boundaries (in hours)
-    MIN_WORKING_HOURS = Decimal("0.5")
-    MAX_WORKING_HOURS = Decimal("12")
-    MAX_TOTAL_MISMATCH_HOURS = Decimal("0.30")
+    MIN_WORKING_HOURS = CFG_MIN_WORKING_HOURS
+    MAX_WORKING_HOURS = CFG_MAX_WORKING_HOURS
+    MAX_TOTAL_MISMATCH_HOURS = CFG_MAX_TOTAL_MISMATCH_HOURS
     
     # Break time (in minutes)
-    MIN_BREAK_MINUTES = 0
-    MAX_BREAK_MINUTES = 120
+    MIN_BREAK_MINUTES = CFG_MIN_BREAK_MINUTES
+    MAX_BREAK_MINUTES = CFG_MAX_BREAK_MINUTES
     
     @staticmethod
     def validate_row(row: AttendanceRow) -> bool:
