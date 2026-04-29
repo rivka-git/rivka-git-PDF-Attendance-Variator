@@ -1,6 +1,7 @@
 import re
 from datetime import date, time
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 from ..models import AttendanceRow
 from .base_parser import BaseParser
@@ -16,7 +17,7 @@ _TOTAL_TOKEN_RE = re.compile(r"\b(\d{1,4}(?:[.,]\d{1,2})?)\b")
 _SUMMARY_HOURS_RE = re.compile(r"(?P<label>סה\"כ שעות|שעות \d+%|שבת)\s+(?P<val>[\d.]+)", re.UNICODE)
 
 
-def _parse_time(s: str):
+def _parse_time(s: str) -> time | None:
     try:
         h, m = s.split(":")
         return time(int(h), int(m))
@@ -24,14 +25,14 @@ def _parse_time(s: str):
         return None
 
 
-def _parse_decimal(s: str):
+def _parse_decimal(s: str) -> Decimal | None:
     try:
         return Decimal(s.replace(",", "."))
     except InvalidOperation:
         return None
 
 
-def _parse_date(s: str):
+def _parse_date(s: str) -> date | None:
     normalized = s.translate(str.maketrans({
         "O": "0",
         "o": "0",
@@ -71,7 +72,7 @@ def _parse_date(s: str):
     return None
 
 
-def _normalize_hour_token(token: str):
+def _normalize_hour_token(token: str) -> Decimal | None:
     tok = token.replace(",", ".")
     if "." in tok:
         return _parse_decimal(tok)
@@ -88,7 +89,7 @@ def _normalize_hour_token(token: str):
 class TypeAParser(BaseParser):
     """Parser for TYPE_A reports (הנשר כח אדם)."""
 
-    def _parse_metadata(self, text: str) -> dict:
+    def _parse_metadata(self, text: str) -> dict[str, str]:
         company = ""
         for line in text.splitlines():
             if "הנשר" in line:
@@ -100,7 +101,7 @@ class TypeAParser(BaseParser):
         tokens = ("תאריך", "יום", "כניסה", "יציאה", "סה\"כ")
         return any(tok in line for tok in tokens)
 
-    def _parse_row(self, line: str):
+    def _parse_row(self, line: str) -> AttendanceRow | None:
         times = _TIME_RE.findall(line)
         if len(times) < 3:
             return None
@@ -127,8 +128,8 @@ class TypeAParser(BaseParser):
             total_hours=total_val,
         )
 
-    def _parse_summary(self, text: str) -> dict:
-        summary = {}
+    def _parse_summary(self, text: str) -> dict[str, Any]:
+        summary: dict[str, Any] = {}
         for m in _SUMMARY_HOURS_RE.finditer(text):
             summary[m.group("label")] = _parse_decimal(m.group("val"))
         return summary

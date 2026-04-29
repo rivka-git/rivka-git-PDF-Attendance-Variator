@@ -3,6 +3,7 @@ from .transformation_strategy import (
     BaseTransformationStrategy,
     TypeATransformationStrategy,
     TypeBTransformationStrategy,
+    TypeCTransformationStrategy,
 )
 from .observer import (
     AuditObserver,
@@ -20,6 +21,7 @@ __all__ = [
     "BaseTransformationStrategy",
     "TypeATransformationStrategy",
     "TypeBTransformationStrategy",
+    "TypeCTransformationStrategy",
     "TransformationObserver",
     "LoggingObserver",
     "AuditObserver",

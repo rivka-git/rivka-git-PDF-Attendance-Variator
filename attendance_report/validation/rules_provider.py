@@ -27,16 +27,22 @@ DEFAULT_RULES_REGISTRY = {
         min_break_minutes=ValidationRules.MIN_BREAK_MINUTES,
         max_break_minutes=ValidationRules.MAX_BREAK_MINUTES,
     ),
+    "TYPE_C": ReportRules(
+        min_working_hours=ValidationRules.MIN_WORKING_HOURS,
+        max_working_hours=ValidationRules.MAX_WORKING_HOURS,
+        min_break_minutes=ValidationRules.MIN_BREAK_MINUTES,
+        max_break_minutes=ValidationRules.MAX_BREAK_MINUTES,
+    ),
 }
 
 
 class RulesProvider:
     """Injectable model that owns and exposes rules by report type."""
 
-    def __init__(self, registry: dict | None = None):
+    def __init__(self, registry: dict | None = None) -> None:
         self._registry = dict(registry if registry is not None else DEFAULT_RULES_REGISTRY)
 
-    def get(self, report_type: str):
+    def get(self, report_type: str) -> ReportRules | None:
         return self._registry.get(report_type)
 
     def register(self, report_type: str, rules: ReportRules) -> None:

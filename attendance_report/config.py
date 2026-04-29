@@ -10,12 +10,17 @@ QUALITY_GATE_THRESHOLDS = {
         "non_strict": {"date": 0.85, "entry": 0.85, "exit": 0.80, "total_hours": 0.85},
         "strict": {"date": 0.90, "entry": 0.90, "exit": 0.90, "total_hours": 0.90},
     },
+    "TYPE_C": {
+        "non_strict": {"date": 0.85, "entry": 0.85, "exit": 0.80, "total_hours": 0.85},
+        "strict": {"date": 0.90, "entry": 0.90, "exit": 0.90, "total_hours": 0.90},
+    },
 }
 
 
 TRANSFORMATION_SPAN_MINUTES = {
     "TYPE_A": 8,
     "TYPE_B": 6,
+    "TYPE_C": 6,
 }
 
 

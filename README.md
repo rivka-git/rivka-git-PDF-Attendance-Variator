@@ -8,7 +8,7 @@ Pipeline-based project to transform attendance PDF reports with classification, 
 attendance_report/
 ├── models/              ← Domain objects (AttendanceRow, AttendanceReport)
 ├── ocr/                 ← PDF text extraction
-├── classifier/          ← Report type detection (TYPE_A / TYPE_B)
+├── classifier/          ← Report type detection (TYPE_A / TYPE_B / TYPE_C)
 ├── parser/              ← Parsing into domain objects (Template Method pattern)
 ├── validation/          ← Transformation & validation (Strategy + Decorator pattern)
 ├── generator/           ← PDF output generation
@@ -18,7 +18,7 @@ attendance_report/
 ## How it works
 
 1. **OCR** (`ocr/`) - Extracts raw text from PDF
-2. **Classifier** (`classifier/`) - Determines TYPE_A or TYPE_B based on keywords
+2. **Classifier** (`classifier/`) - Determines TYPE_A / TYPE_B / TYPE_C based on keywords
 3. **Parser** (`parser/`) - Converts text to domain objects (Template Method)
 4. **Validation** (`validation/`) - Applies transformations and validates (Strategy + Decorator)
 5. **Generator** (`generator/`) - Produces output PDF with original structure
@@ -33,6 +33,12 @@ Strict quality mode (optional):
 
 ```bash
 python main.py data/input/a_r_9.pdf -o data/output --strict-quality
+```
+
+Set log level (optional):
+
+```bash
+python main.py data/input/a_r_9.pdf -o data/output --log-level DEBUG
 ```
 
 ## Tests

@@ -104,3 +104,10 @@ class TypeBTransformationStrategy(BaseTransformationStrategy):
             hourly_rate=row.hourly_rate,
             amount_to_pay=row.amount_to_pay,
         )
+
+
+class TypeCTransformationStrategy(TypeBTransformationStrategy):
+    """TYPE_C currently follows TYPE_B transformation behavior."""
+
+    def transform_row(self, row: AttendanceRow) -> AttendanceRow:
+        return super().transform_row(row)

@@ -13,7 +13,7 @@ class ValidatingStrategyDecorator(BaseTransformationStrategy):
     Validates the transformed row; if invalid, returns original unchanged.
     """
     
-    def __init__(self, inner_strategy: BaseTransformationStrategy):
+    def __init__(self, inner_strategy: BaseTransformationStrategy) -> None:
         self.inner = inner_strategy
     
     def transform_row(self, row: AttendanceRow) -> AttendanceRow:

@@ -17,3 +17,9 @@ KEYWORDS_TYPE_B = [
     "שעתסה\"כ",
     "שעתסהכ",
 ]
+
+KEYWORDS_TYPE_C = [
+    "TYPE_C",
+    "סוג ג",
+    "דוח ג",
+]

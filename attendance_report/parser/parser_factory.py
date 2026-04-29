@@ -1,6 +1,7 @@
 from .base_parser import BaseParser
 from .type_a_parser import TypeAParser
 from .type_b_parser import TypeBParser
+from .type_c_parser import TypeCParser
 
 
 class ParserFactory:
@@ -9,6 +10,7 @@ class ParserFactory:
     _parsers = {
         "TYPE_A": TypeAParser(),
         "TYPE_B": TypeBParser(),
+        "TYPE_C": TypeCParser(),
     }
     
     @classmethod

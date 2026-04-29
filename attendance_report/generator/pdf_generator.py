@@ -1,4 +1,6 @@
 from pathlib import Path
+import logging
+from typing import Any
 
 from ..models import AttendanceReport
 from reportlab.lib import colors
@@ -10,17 +12,25 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 class PdfGenerator:
     """Generates PDF output from AttendanceReport object."""
 
-    def _fmt_date(self, value) -> str:
+    _TABLE_BUILDERS = {
+        "TYPE_A": "_table_for_type_a",
+        "TYPE_B": "_table_for_type_b",
+        "TYPE_C": "_table_for_type_b",
+    }
+
+    logger = logging.getLogger(__name__)
+
+    def _fmt_date(self, value: Any) -> str:
         if value is None:
             return ""
         return value.strftime("%d/%m/%Y")
 
-    def _fmt_time(self, value) -> str:
+    def _fmt_time(self, value: Any) -> str:
         if value is None:
             return ""
         return value.strftime("%H:%M")
 
-    def _fmt_num(self, value) -> str:
+    def _fmt_num(self, value: Any) -> str:
         if value is None:
             return ""
         try:
@@ -28,7 +38,7 @@ class PdfGenerator:
         except Exception:
             return str(value)
 
-    def _table_for_type_a(self, report: AttendanceReport):
+    def _table_for_type_a(self, report: AttendanceReport) -> list[list[str]]:
         headers = ["Date", "Day", "Entry", "Exit", "Total"]
         rows = [headers]
         for row in report.rows:
@@ -43,7 +53,7 @@ class PdfGenerator:
             )
         return rows
 
-    def _table_for_type_b(self, report: AttendanceReport):
+    def _table_for_type_b(self, report: AttendanceReport) -> list[list[str]]:
         headers = ["Date", "Day", "Entry", "Exit", "Total", "Notes"]
         rows = [headers]
         for row in report.rows:
@@ -82,11 +92,14 @@ class PdfGenerator:
         story.append(Spacer(1, 12))
 
         if report.report_type == "TYPE_A":
-            table_data = self._table_for_type_a(report)
             col_widths = [80, 80, 70, 70, 70]
         else:
-            table_data = self._table_for_type_b(report)
             col_widths = [80, 70, 60, 60, 60, 100]
+
+        builder_name = self._TABLE_BUILDERS.get(report.report_type, "_table_for_type_b")
+        builder = getattr(self, builder_name)
+        table_data = builder(report)
+        self.logger.debug("Generating table for report_type=%s via %s", report.report_type, builder_name)
 
         table = Table(table_data, colWidths=col_widths, repeatRows=1)
         table.setStyle(

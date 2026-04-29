@@ -1,6 +1,7 @@
 """CLI entry point for attendance report transformer."""
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -17,8 +18,12 @@ from attendance_report.validation import (
     TransformationService,
     TypeATransformationStrategy,
     TypeBTransformationStrategy,
+    TypeCTransformationStrategy,
     ValidatingStrategyDecorator,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def _report_completeness(report: AttendanceReport) -> dict:
@@ -29,7 +34,12 @@ def _passes_quality_gate(report: AttendanceReport, metrics: dict, strict_quality
     return passes_quality_gate(report, metrics, strict_quality=strict_quality)
 
 
-def main(argv=None):
+def _configure_logging(level_name: str) -> None:
+    level = getattr(logging, level_name.upper(), logging.INFO)
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Transform attendance PDF reports with validation and reformatting."
     )
@@ -40,12 +50,19 @@ def main(argv=None):
         action="store_true",
         help="Fail when parsed field coverage is not high enough for reliable output",
     )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Set runtime log verbosity",
+    )
     
     args = parser.parse_args(argv)
+    _configure_logging(args.log_level)
     
     # Validate input
     if not args.input_pdf.exists():
-        print(f"Error: Input file not found: {args.input_pdf}", file=sys.stderr)
+        logger.error("Input file not found: %s", args.input_pdf)
         return 1
     
     # Ensure output directory exists
@@ -53,43 +70,44 @@ def main(argv=None):
     
     try:
         # Stage 1: Extract text from PDF
-        print(f"[1/6] Extracting text from {args.input_pdf.name}...")
+        logger.info("[1/6] Extracting text from %s...", args.input_pdf.name)
         extractor = TextExtractor()
         raw_text = extractor.extract(args.input_pdf)
 
         # Stage 2: Classify report type
-        print("[2/6] Classifying report type...")
+        logger.info("[2/6] Classifying report type...")
         classifier = Classifier()
         report_type = classifier.classify(raw_text)
-        print(f"  -> Detected type: {report_type}")
+        logger.info("  -> Detected type: %s", report_type)
 
         if report_type == "UNKNOWN":
-            print("Warning: Could not determine report type. Skipping further processing.")
+            logger.warning("Could not determine report type. Skipping further processing.")
             return 0
 
         # Stage 3: Parse into domain object
-        print("[3/6] Parsing into domain object...")
+        logger.info("[3/6] Parsing into domain object...")
         parser = ParserFactory.get_parser(report_type)
         report = parser.parse(raw_text, args.input_pdf, report_type)
-        print(f"  -> Extracted {len(report.rows)} rows")
+        logger.info("  -> Extracted %d rows", len(report.rows))
 
         completeness = _report_completeness(report)
-        print(
-            "  -> Completeness: "
-            f"date={completeness['date']:.0%}, "
-            f"entry={completeness['entry']:.0%}, "
-            f"exit={completeness['exit']:.0%}, "
-            f"total={completeness['total_hours']:.0%}"
+        logger.info(
+            "  -> Completeness: date=%s, entry=%s, exit=%s, total=%s",
+            f"{completeness['date']:.0%}",
+            f"{completeness['entry']:.0%}",
+            f"{completeness['exit']:.0%}",
+            f"{completeness['total_hours']:.0%}",
         )
         if not _passes_quality_gate(report, completeness, strict_quality=args.strict_quality):
-            print("Error: Parsed data quality is too low for reliable output. Stopping before generation.")
+            logger.error("Parsed data quality is too low for reliable output. Stopping before generation.")
             return 2
 
         # Stage 4: Transform and validate
-        print("[4/6] Transforming and validating rows...")
+        logger.info("[4/6] Transforming and validating rows...")
         strategy_registry = {
             "TYPE_A": ValidatingStrategyDecorator(TypeATransformationStrategy()),
             "TYPE_B": ValidatingStrategyDecorator(TypeBTransformationStrategy()),
+            "TYPE_C": ValidatingStrategyDecorator(TypeCTransformationStrategy()),
         }
         transformation_service = TransformationService(
             strategy_registry,
@@ -97,24 +115,24 @@ def main(argv=None):
             observers=[LoggingObserver()],
         )
         transformed_report = transformation_service.transform_report(report)
-        print("  -> Transformation complete")
+        logger.info("  -> Transformation complete")
 
         # Stage 5: Generate output PDF
-        print("[5/6] Generating output PDF...")
+        logger.info("[5/6] Generating output PDF...")
         generator = PdfGenerator()
         output_pdf = args.output_dir / f"{args.input_pdf.stem}_output.pdf"
         generator.generate(transformed_report, output_pdf)
-        print(f"  -> Output saved to {output_pdf}")
+        logger.info("  -> Output saved to %s", output_pdf)
 
         # Stage 6: Complete
-        print("[6/6] Process complete!")
+        logger.info("[6/6] Process complete!")
         return 0
     
     except AttendanceReportError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logger.error("%s", e)
         return 1
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logger.exception("Unexpected error: %s", e)
         return 1
 
 

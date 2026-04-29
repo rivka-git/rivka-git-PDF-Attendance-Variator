@@ -16,7 +16,7 @@ Each exception carries context about what went wrong and suggestions for recover
 class AttendanceReportError(Exception):
     """Base exception for all attendance report processing errors."""
     
-    def __init__(self, message: str, context: dict | None = None, suggestion: str = ""):
+    def __init__(self, message: str, context: dict | None = None, suggestion: str = "") -> None:
         """
         Initialize exception with context and recovery suggestion.
         

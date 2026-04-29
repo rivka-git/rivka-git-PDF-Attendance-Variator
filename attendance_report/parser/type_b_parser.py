@@ -1,6 +1,7 @@
 import re
 from datetime import date, time
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 from ..models import AttendanceRow
 from .base_parser import BaseParser
@@ -19,7 +20,7 @@ _WORK_DAYS_RE = re.compile(r'ימי עבודה לחודש.*?(\d+)', re.UNICODE)
 _HOURLY_RATE_RE = re.compile(r'מחיר לשעה[^\d]*(\d+\.?\d*)', re.UNICODE)
 
 
-def _parse_date(s: str):
+def _parse_date(s: str) -> date | None:
     normalized = s.translate(str.maketrans({
         "O": "0",
         "o": "0",
@@ -57,7 +58,7 @@ def _parse_date(s: str):
     return None
 
 
-def _parse_time(s: str):
+def _parse_time(s: str) -> time | None:
     if not s:
         return None
     try:
@@ -75,7 +76,7 @@ def _parse_time(s: str):
         return None
 
 
-def _parse_compact_time(token: str):
+def _parse_compact_time(token: str) -> time | None:
     """Parse OCR compact times such as 803 -> 08:03 or 1109 -> 11:09."""
     if not token or not token.isdigit():
         return None
@@ -95,7 +96,7 @@ def _parse_compact_time(token: str):
     return None
 
 
-def _extract_times(line: str):
+def _extract_times(line: str) -> list[time]:
     explicit_matches = list(_TIME_RE.finditer(line))
     compact_matches = list(_COMPACT_TIME_RE.finditer(line))
 
@@ -119,7 +120,7 @@ def _extract_times(line: str):
     return [t for _, t in candidates]
 
 
-def _infer_exit_from_total(entry_t: time, total_h: Decimal):
+def _infer_exit_from_total(entry_t: time, total_h: Decimal) -> time | None:
     if entry_t is None or total_h is None:
         return None
     if total_h < Decimal("0") or total_h > Decimal("16"):
@@ -132,7 +133,7 @@ def _infer_exit_from_total(entry_t: time, total_h: Decimal):
     return time(exit_hour, exit_min)
 
 
-def _parse_decimal(s: str):
+def _parse_decimal(s: str) -> Decimal | None:
     if not s:
         return None
     try:
@@ -141,7 +142,7 @@ def _parse_decimal(s: str):
         return None
 
 
-def _normalize_total(token: str):
+def _normalize_total(token: str) -> Decimal | None:
     if not token:
         return None
     token = token.replace(",", ".")
@@ -161,7 +162,7 @@ def _normalize_total(token: str):
 class TypeBParser(BaseParser):
     """Parser for TYPE_B reports (כרטיס עובד לחודש)."""
 
-    def _parse_metadata(self, text: str) -> dict:
+    def _parse_metadata(self, text: str) -> dict[str, str]:
         month_label = ""
         for line in text.splitlines():
             if "כרטיס" in line or "כרטים" in line:
@@ -173,7 +174,7 @@ class TypeBParser(BaseParser):
         tokens = ("תאריך", "יום", "כניסה", "יציאה", "סה\"כ", "כרטיס עובד")
         return any(tok in line for tok in tokens)
 
-    def _parse_row(self, line: str):
+    def _parse_row(self, line: str) -> AttendanceRow | None:
         parsed_date = _parse_date(line)
         if parsed_date is None:
             return None
@@ -199,7 +200,7 @@ class TypeBParser(BaseParser):
             total_hours=totals[-1] if totals else None,
         )
 
-    def _parse_rows(self, text: str) -> tuple:
+    def _parse_rows(self, text: str) -> tuple[AttendanceRow, ...]:
         rows = []
         seen_dates = set()
 
@@ -266,8 +267,8 @@ class TypeBParser(BaseParser):
                     )
         return tuple(rows)
 
-    def _parse_summary(self, text: str) -> dict:
-        summary = {}
+    def _parse_summary(self, text: str) -> dict[str, Any]:
+        summary: dict[str, Any] = {}
         m = _TOTAL_PAY_RE.search(text)
         if m:
             summary["סהכ לתשלום"] = _parse_decimal(m.group(1))
